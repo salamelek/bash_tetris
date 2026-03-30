@@ -21,6 +21,7 @@ prev_game_state=-1
 sleep_time=0.033     # ~30 FPS
 
 curr_block_id=-1
+next_block_id=-1
 curr_block_rotation=0
 curr_block_x=0
 curr_block_y=0
@@ -54,12 +55,12 @@ prev_grid=()
 ##################
 # PRETTY CONSOLE #
 ##################
-tput smcup                      # Use alternate screen buffer to keep previous stuff in console
+#tput smcup                      # Use alternate screen buffer to keep previous stuff in console
 tput civis                      # Hide the cursor to not see it
 stty -echo -icanon time 0 min 0 # Disable seeing input characters
 
 cleanup() {
-    tput rmcup  # Restore screen
+    #tput rmcup  # Restore screen
     tput cnorm  # Restore cursor
     stty sane   # Restore print on type
 }
@@ -71,6 +72,16 @@ trap cleanup EXIT
 #############
 # FUNCTIONS #
 #############
+
+get_random_int_in_range() {
+    if [ "$#" -ne 2 ]; then
+        local min=1 max=7
+    else
+        local min=$1 max=$2
+    fi
+    
+    echo $(( RANDOM % (max - min + 1) + min ))
+}
 
 check_bounds() {
     if [ "$#" -ne 2 ]; then
@@ -254,7 +265,7 @@ handle_state_1() {
     # spawn next block
     # Move block
     
-    # Update screen
+    # Update grid
     print_grid_differences
 }
 
@@ -322,7 +333,16 @@ set_grid_cell 0 2 17
 set_grid_cell 0 1 18
 set_grid_cell 0 0 19
 
-# exit 0
+
+
+
+
+
+
+# Initialise the current and next block
+curr_block=$(get_random_int_in_range)
+next_block=$(get_random_int_in_range)
+
 
 
 while true; do
