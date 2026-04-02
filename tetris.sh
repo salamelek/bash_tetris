@@ -142,6 +142,8 @@ get_x_y_from_value() {
 
 # Directly works with the global curr and prev grid
 print_grid_differences() {
+    # TODO also delete stuff that is not up to date
+    
     for i in "${!curr_grid[@]}"; do
         # If element is not the same as in the prev_grid, print it
         if [ "${curr_grid[$i]}" != "${prev_grid[$i]}" ]; then
@@ -198,7 +200,6 @@ print_initial_game_screen() {
 EOF
 }
 
-
 # Welcome screen
 handle_state_0() {
     case "$1" in
@@ -251,19 +252,23 @@ handle_state_1() {
 
     # Get user inputs for moving and rotating block
     case "$1" in
-        $'\x1b[D') ;;   # Move left (Left arrow)
-        $'\x1b[C') ;;   # Move right (Right arrow)
+        $'\x1b[D') (( curr_block_x-- )) ;;   # Move left (Left arrow)
+        $'\x1b[C') (( curr_block_x++ )) ;;   # Move right (Right arrow)
         " ") ;;         # Fast drop (Space)
-        $'\x1b[B') ;;   # Slow drop (Down arrow)
-        $'\x1b[A') ;;   # Hold block (Up arrow)
+        $'\x1b[B') (( curr_block_y++ )) ;;   # Slow drop (Down arrow)
+        $'\x1b[A') (( curr_block_y-- )) ;;   # Hold block (Up arrow)
         "x") ;;         # Rotate block left
         "c") ;;         # Rotate block right
         *) ;;
     esac
 
-    # spawn block (take next if exists, otherwise generate new one)
-    # spawn next block
-    # Move block
+    # Write block to correct grid cell
+    set_grid_cell "$curr_block_id" "$curr_block_x" "$curr_block_y"
+    
+    # Unset prev position
+    # FIXME not working (?)
+    local coords=$(( y * GRID_WIDTH + x ))
+    unset curr_grid[coords]
     
     # Update grid
     print_grid_differences
@@ -312,38 +317,10 @@ handle_state_3() {
 # MAIN LOOP #
 #############
 
-set_grid_cell 0 0 0
-set_grid_cell 0 1 1
-set_grid_cell 0 2 2
-set_grid_cell 0 3 3
-set_grid_cell 0 4 4
-set_grid_cell 0 5 5
-set_grid_cell 0 6 6
-set_grid_cell 0 7 7
-set_grid_cell 0 8 8
-set_grid_cell 0 9 9
-set_grid_cell 0 9 10
-set_grid_cell 0 8 11
-set_grid_cell 0 7 12
-set_grid_cell 0 6 13
-set_grid_cell 0 5 14
-set_grid_cell 0 4 15
-set_grid_cell 0 3 16
-set_grid_cell 0 2 17
-set_grid_cell 0 1 18
-set_grid_cell 0 0 19
-
-
-
-
-
-
 
 # Initialise the current and next block
-curr_block=$(get_random_int_in_range)
-next_block=$(get_random_int_in_range)
-
-
+curr_block_id=$(get_random_int_in_range)
+next_block_id=$(get_random_int_in_range)
 
 while true; do
     case "$curr_game_state" in
@@ -360,5 +337,12 @@ while true; do
 	# -r:   no backslash escape char
 	# -n1:  read 1 char
 	# -t:   wait x seconds
-	read -rn1 -t $sleep_time key
+	# No s for silent since we already mute console input
+	read -rn1 -t "$sleep_time" key
+
+    if [[ $key == $'\x1b' ]]; then
+        read -rn1 -t 0.001 k1
+        read -rn1 -t 0.001 k2
+        key+="$k1$k2"
+    fi
 done
