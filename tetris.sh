@@ -252,11 +252,35 @@ handle_state_1() {
 
     # Get user inputs for moving and rotating block
     case "$1" in
-        $'\x1b[D') (( curr_block_x-- )) ;;   # Move left (Left arrow)
-        $'\x1b[C') (( curr_block_x++ )) ;;   # Move right (Right arrow)
+        $'\x1b[D')   # Move left (Left arrow)
+            if (( curr_block_x <= 0 )); then
+                return 0
+            fi
+        
+            (( curr_block_x-- ))
+            ;;
+        $'\x1b[C')   # Move right (Right arrow)
+            if (( curr_block_x >= GRID_WIDTH-1 )); then
+                return 0
+            fi
+        
+            (( curr_block_x++ ))
+            ;;
         " ") ;;         # Fast drop (Space)
-        $'\x1b[B') (( curr_block_y++ )) ;;   # Slow drop (Down arrow)
-        $'\x1b[A') (( curr_block_y-- )) ;;   # Hold block (Up arrow)
+        $'\x1b[B')
+            if (( curr_block_y >= GRID_HEIGHT-1 )); then
+                return 0
+            fi
+            
+            (( curr_block_y++ ))
+            ;;
+        $'\x1b[A')   # Hold block (Up arrow)
+            if (( curr_block_y <= 0 )); then
+                return 0
+            fi
+            
+            (( curr_block_y-- ))
+            ;;
         "x") ;;         # Rotate block left
         "c") ;;         # Rotate block right
         *) ;;
@@ -266,12 +290,15 @@ handle_state_1() {
     set_grid_cell "$curr_block_id" "$curr_block_x" "$curr_block_y"
     
     # Unset prev position
-    # FIXME not working (?)
-    local coords=$(( y * GRID_WIDTH + x ))
-    unset curr_grid[coords]
+    # FIXME not working :p
+    set_grid_cell 0 "$prev_block_x" "$prev_block_y"
     
     # Update grid
     print_grid_differences
+    
+    # Update block history
+    prev_block_x="$curr_block_x"
+    prev_block_y="$curr_block_y"
 }
 
 
@@ -323,6 +350,8 @@ curr_block_id=$(get_random_int_in_range)
 next_block_id=$(get_random_int_in_range)
 
 while true; do
+    echo "${curr_grid[*]}"
+
     case "$curr_game_state" in
         0) handle_state_0 "$key" ;; # Welcome screen
         1) handle_state_1 "$key" ;; # Play game screen
