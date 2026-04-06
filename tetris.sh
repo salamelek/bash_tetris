@@ -36,13 +36,13 @@ block_j_id=6
 block_t_id=7
 
 # \x1b[38;2;{r};{g};{b}m
-block_o_color='\x1b[38;2;{255};{255};{0}m'  # yellow
-block_i_color='\x1b[38;2;{0};{255};{255}m'  # light blue
-block_s_color='\x1b[38;2;{255};{0};{0}m'    # red
-block_z_color='\x1b[38;2;{0};{255};{0}m'    # green
-block_l_color='\x1b[38;2;{255};{128};{0}m'  # orange
-block_j_color='\x1b[38;2;{0};{0};{255}m'    # dark blue
-block_t_color='\x1b[38;2;{255};{0};{255}m'  # purple
+block_o_color='\x1b[38;2;255;255;0m'  # yellow
+block_i_color='\x1b[38;2;0;255;255m'  # light blue
+block_s_color='\x1b[38;2;255;0;0m'    # red
+block_z_color='\x1b[38;2;0;255;0m'    # green
+block_l_color='\x1b[38;2;255;128;0m'  # orange
+block_j_color='\x1b[38;2;0;0;255m'    # dark blue
+block_t_color='\x1b[38;2;255;0;255m'  # purple
 
 ANSI_RESET='\x1b[0m'
 
@@ -140,6 +140,24 @@ get_x_y_from_value() {
     echo "$x $y"
 }
 
+print_color_code() {
+    if [ "$#" -ne 1 ]; then
+        echo "Expected block ID!"
+        return 1
+    fi
+    
+    case "$1" in
+        "1") echo -en "$block_o_color" ;;
+        "2") echo -en "$block_i_color" ;;
+        "3") echo -en "$block_s_color" ;;
+        "4") echo -en "$block_z_color" ;;
+        "5") echo -en "$block_l_color" ;;
+        "6") echo -en "$block_j_color" ;;
+        "7") echo -en "$block_t_color" ;;
+        *) ;;
+    esac
+}
+
 # Directly works with the global curr and prev grid
 print_grid_differences() {
     # TODO also delete stuff that is not up to date
@@ -153,8 +171,9 @@ print_grid_differences() {
             # move cursor: tput cup expects row (y), col (x)
             tput cup "$y" "$x"
 
-            # -n disables newline
-            echo -n "${curr_grid[$i]}${curr_grid[$i]}"
+            print_color_code "${curr_grid[$i]}"
+            echo -en "██"
+            # echo -en "$ANSI_RESET"
         fi
     done
     
@@ -350,7 +369,7 @@ curr_block_id=$(get_random_int_in_range)
 next_block_id=$(get_random_int_in_range)
 
 while true; do
-    echo "${curr_grid[*]}"
+    # echo "${curr_grid[*]}"
 
     case "$curr_game_state" in
         0) handle_state_0 "$key" ;; # Welcome screen
