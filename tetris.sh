@@ -113,17 +113,17 @@ set_grid_cell() {
     curr_grid[$coords]="$id"
 }
 
-color_grid_cell() {
-    if [ "$#" -ne 3 ]; then
-        echo "Expected color, x and y!"
+delete_grid_cell_color() {
+    if [ "$#" -ne 2 ]; then
+        echo "Expected x and y!"
         return 1
     fi
     
-    local color=$1 x=$2 y=$3
+    local x=$1 y=$2
     
-    check_bounds x y
+    tput cup "$y" "$x"
     
-    
+    echo -en "  "
 }
 
 get_x_y_from_value() {
@@ -173,7 +173,7 @@ print_grid_differences() {
 
             print_color_code "${curr_grid[$i]}"
             echo -en "██"
-            # echo -en "$ANSI_RESET"
+            echo -en "$ANSI_RESET"
         fi
     done
     
@@ -246,8 +246,8 @@ handle_state_0() {
     ║   |_|      |_____|      |_|      |_| \_\    |___|    |____/  ║
     ║                                                              ║
     ║                                                              ║
-    ║                     (S) Start game                           ║
-    ║                     (Q) Quit                                 ║
+    ║                      (S)tart game                            ║
+    ║                      (Q)uit                                  ║
     ║                                                              ║
     ╚══════════════════════════════════════════════════════════════╝
 EOF
@@ -262,8 +262,10 @@ handle_state_1() {
         *) ;;
     esac
 
+    # If coming from another screen, redraw the whole screen
     if [ "$prev_game_state" -ne 1 ]; then
         prev_game_state=$curr_game_state
+        prev_grid=()
 
         clear
         print_initial_game_screen
@@ -309,8 +311,10 @@ handle_state_1() {
     set_grid_cell "$curr_block_id" "$curr_block_x" "$curr_block_y"
     
     # Unset prev position
-    # FIXME not working :p
-    set_grid_cell 0 "$prev_block_x" "$prev_block_y"
+    local coords=$(( prev_block_y * GRID_WIDTH + prev_block_x ))
+    unset curr_grid[coords]
+    unset prev_grid[coords]
+    delete_grid_cell_color $( get_x_y_from_value "$coords" )
     
     # Update grid
     print_grid_differences
@@ -326,7 +330,10 @@ handle_state_2() {
     case "$1" in
         $'\x1b') curr_game_state=1 ;; # Resume game on ESC
         "q") exit 0 ;;  # Quit game
-        "r") curr_game_state=1 ;; # Restart game
+        "r") # Restart game
+            curr_game_state=1
+            curr_grid=()
+            ;;
         *) ;;
     esac
 
@@ -344,7 +351,10 @@ handle_state_2() {
 handle_state_3() {
     case "$1" in
         "q") exit 0 ;;  # Quit game
-        "r") curr_game_state=1 ;; # Restart game
+        "r") # Restart game
+            curr_game_state=1
+            curr_grid=()
+            ;;
         *) ;;
     esac
 
@@ -388,6 +398,7 @@ while true; do
 	# No s for silent since we already mute console input
 	read -rn1 -t "$sleep_time" key
 
+    # Arrow keys are made from more than one byte
     if [[ $key == $'\x1b' ]]; then
         read -rn1 -t 0.001 k1
         read -rn1 -t 0.001 k2
