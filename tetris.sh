@@ -7,7 +7,7 @@
 
 GRID_WIDTH=10
 GRID_HEIGHT=20
-GRID_LENGTH=$((GRID_WIDTH * GRID_HEIGHT))
+GRID_LENGTH=$((GRID_WIDTH * GRID_HEIGHT ))
 GRID_OFFSET_X=26
 GRID_OFFSET_Y=9
 
@@ -160,8 +160,6 @@ print_color_code() {
 
 # Directly works with the global curr and prev grid
 print_grid_differences() {
-    # TODO also delete stuff that is not up to date
-    
     for i in "${!curr_grid[@]}"; do
         # If element is not the same as in the prev_grid, print it
         if [ "${curr_grid[$i]}" != "${prev_grid[$i]}" ]; then
@@ -306,15 +304,17 @@ handle_state_1() {
         "c") ;;         # Rotate block right
         *) ;;
     esac
+    
+    # Unset prev position if it's different from the current one
+    if (( prev_block_x != curr_block_x || prev_block_y != curr_block_y )); then
+        local coords=$(( prev_block_y * GRID_WIDTH + prev_block_x ))
+        unset curr_grid[coords]
+        unset prev_grid[coords]
+        delete_grid_cell_color $( get_x_y_from_value "$coords" )
+    fi
 
     # Write block to correct grid cell
     set_grid_cell "$curr_block_id" "$curr_block_x" "$curr_block_y"
-    
-    # Unset prev position
-    local coords=$(( prev_block_y * GRID_WIDTH + prev_block_x ))
-    unset curr_grid[coords]
-    unset prev_grid[coords]
-    delete_grid_cell_color $( get_x_y_from_value "$coords" )
     
     # Update grid
     print_grid_differences
