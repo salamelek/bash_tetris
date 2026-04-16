@@ -303,13 +303,16 @@ handle_state_1() {
     
     # Update block fall frame counter
     fall_block_counter=$(( fall_block_counter + 1 ))
+    
     if (( fall_block_counter % fall_every_n_frames == 0 )); then
         curr_block_y=$(( curr_block_y + 1 ))
         fall_block_counter=0
         
         if (( curr_block_y >= GRID_HEIGHT )); then
-            curr_block_y=0
             curr_block_x=$((GRID_WIDTH / 2))
+            curr_block_y=0
+            prev_block_x=$curr_block_x
+            prev_block_y=$curr_block_y
             
             # new block
             curr_block_id=$next_block_id
