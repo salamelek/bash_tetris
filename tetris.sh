@@ -18,12 +18,14 @@ GRID_OFFSET_Y=9
 
 curr_game_state=0
 prev_game_state=-1
-sleep_time=0.033     # ~30 FPS
+sleep_time=0.03     # ~30 FPS
+fall_every_n_frames=10
+fall_block_counter=0
 
 curr_block_id=-1
 next_block_id=-1
 curr_block_rotation=0
-curr_block_x=0
+curr_block_x=$((GRID_WIDTH / 2))
 curr_block_y=0
 
 # id: 0 is empty air
@@ -293,17 +295,27 @@ handle_state_1() {
             
             (( curr_block_y++ ))
             ;;
-        $'\x1b[A')   # Hold block (Up arrow)
-            if (( curr_block_y <= 0 )); then
-                return 0
-            fi
-            
-            (( curr_block_y-- ))
-            ;;
+        $'\x1b[A') ;;  # Hold block (Up arrow)
         "x") ;;         # Rotate block left
         "c") ;;         # Rotate block right
         *) ;;
     esac
+    
+    # Update block fall frame counter
+    fall_block_counter=$(( fall_block_counter + 1 ))
+    if (( fall_block_counter % fall_every_n_frames == 0 )); then
+        curr_block_y=$(( curr_block_y + 1 ))
+        fall_block_counter=0
+        
+        if (( curr_block_y >= GRID_HEIGHT )); then
+            curr_block_y=0
+            curr_block_x=$((GRID_WIDTH / 2))
+            
+            # new block
+            curr_block_id=$next_block_id
+            next_block_id=$(get_random_int_in_range)
+        fi
+    fi
     
     # Unset prev position if it's different from the current one
     if (( prev_block_x != curr_block_x || prev_block_y != curr_block_y )); then
