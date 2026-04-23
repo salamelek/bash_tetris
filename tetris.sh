@@ -360,15 +360,16 @@ handle_state_1() {
     # Get user inputs for moving and rotating block
     case "$1" in
         $'\x1b[D')  # Move left (Left arrow)
-            if (( curr_block_x <= 0 )); then
+            left_cell_id=${curr_grid[$((curr_block_y * GRID_WIDTH + curr_block_x - 1))]}
+            if (( curr_block_x <= 0 || left_cell_id == 8 )); then
                 return 0
             fi
         
             (( curr_block_x-- ))
             ;;
         $'\x1b[C')  # Move right (Right arrow)
-            lower_cell_id=${curr_grid[$((curr_block_y * GRID_WIDTH + curr_block_x))]}
-            if (( curr_block_y >= GRID_HEIGHT || lower_cell_id == 8 )); then
+            right_cell_id=${curr_grid[$((curr_block_y * GRID_WIDTH + curr_block_x + 1))]}
+            if (( curr_block_x >= GRID_WIDTH - 1 || right_cell_id == 8 )); then
                 return 0
             fi
         
@@ -376,7 +377,8 @@ handle_state_1() {
             ;;
         " ") ;;     # Fast drop (Space)
         $'\x1b[B')  # Move down
-            if (( curr_block_y >= GRID_HEIGHT-1 )); then
+            lower_cell_id=${curr_grid[$(((curr_block_y + 1) * GRID_WIDTH + curr_block_x))]}
+            if (( curr_block_y >= GRID_HEIGHT - 1 || lower_cell_id == 8 )); then
                 return 0
             fi
             
