@@ -16,6 +16,41 @@ GRID_OFFSET_Y=9
 # GLOBALS #
 ###########
 
+# ===== Block hitboxes =====
+
+: 'Block O
+xx
+xo
+'
+: 'Block I
+x
+x
+x
+o
+'
+: 'Block S
+ xx
+xo
+'
+: 'Block Z
+xx
+ ox
+'
+: 'Block L
+x
+x
+xo
+'
+: 'Block J
+ x
+ x
+xo
+': 'Block T
+xxx
+ o
+'
+
+
 curr_game_state=0
 prev_game_state=-1
 sleep_time=0.03     # ~30 FPS
@@ -28,7 +63,7 @@ curr_block_rotation=0
 curr_block_x=$((GRID_WIDTH / 2))
 curr_block_y=0
 
-# id: 0 is empty air
+# id: 0 is empty tile
 block_o_id=1
 block_i_id=2
 block_s_id=3
@@ -75,6 +110,72 @@ trap cleanup EXIT
 # FUNCTIONS #
 #############
 
+check_bounds() {
+    if [ "$#" -ne 3 ]; then
+        echo "Expected block ID x and y!"
+        return 1
+    fi
+    
+    # TODO check bounds based on block ID
+    : '
+    case "$1" in
+        1) ;;
+        2) ;;
+        3) ;;
+        4) ;;
+        5) ;;
+        6) ;;
+        7) ;;
+        *)
+            echo "Invalid block ID!"
+            return 1
+        ;;
+    esac
+    '
+    
+    if (( $1 < 0 || $1 >= GRID_WIDTH || $2 < 0 || $2 >= GRID_HEIGHT )); then
+        echo "Coordinates out of bounds!"
+        return 1
+    fi
+    
+    return 0
+}
+
+# Write block in tiles
+write_shaped_block() {
+    if [ "$#" -ne 3 ]; then
+        echo "Expected block ID, x and y!"
+        return 1
+    fi
+    
+    case "$1" in
+        1) ;;
+        2) ;;
+        3) ;;
+        4) ;;
+        5) ;;
+        6) ;;
+        7) ;;
+        *)
+            echo "Invalid block ID!"
+            return 1
+        ;;
+    esac
+}
+
+# Abbandons the block and keeps it in place
+abbandon_current_block() {
+    
+
+}
+
+# Spawns new shaped block
+spawn_new_block() {
+    # TODO
+    # 1. Abbandon current block
+    # 2. Create new block
+}
+
 get_random_int_in_range() {
     if [ "$#" -ne 2 ]; then
         local min=1 max=7
@@ -83,20 +184,6 @@ get_random_int_in_range() {
     fi
     
     echo $(( RANDOM % (max - min + 1) + min ))
-}
-
-check_bounds() {
-    if [ "$#" -ne 2 ]; then
-        echo "Expected x and y!"
-        return 1
-    fi
-    
-    if (( $1 < 0 || $1 >= GRID_WIDTH || $2 < 0 || $2 >= GRID_HEIGHT )); then
-        echo "Coordinates out of bounds!"
-        return 1
-    fi
-    
-    return 0
 }
 
 # Args: ID, x, y
@@ -304,10 +391,18 @@ handle_state_1() {
     # Update block fall frame counter
     fall_block_counter=$(( fall_block_counter + 1 ))
     
-    if (( fall_block_counter % fall_every_n_frames == 0 )); then
+    if (( fall_block_counter == fall_every_n_frames )); then
+        # TODO
+        # 1. Check bottom tile*
+        # 2. If it's free, drop the block 1 tile down
+        # 3. If it's not free, stop the block and spawn a new one
+        #
+        # * Ofc considering hitboxes
+    
         curr_block_y=$(( curr_block_y + 1 ))
         fall_block_counter=0
         
+        # Block touches bottom
         if (( curr_block_y >= GRID_HEIGHT )); then
             curr_block_x=$((GRID_WIDTH / 2))
             curr_block_y=0
@@ -348,6 +443,11 @@ handle_state_2() {
         "r") # Restart game
             curr_game_state=1
             curr_grid=()
+            prev_grid=()
+            curr_block_id=$(get_random_int_in_range)
+            next_block_id=$(get_random_int_in_range)
+            curr_block_x=$((GRID_WIDTH / 2))
+            curr_block_y=0
             ;;
         *) ;;
     esac
