@@ -63,7 +63,7 @@ curr_block_rotation=0
 curr_block_x=$((GRID_WIDTH / 2))
 curr_block_y=0
 
-# id: 0 is empty tile
+# id: 0 is empty tile, usually not used because we can just unset the array
 block_o_id=1
 block_i_id=2
 block_s_id=3
@@ -71,6 +71,7 @@ block_z_id=4
 block_l_id=5
 block_j_id=6
 block_t_id=7
+# id: 8 is occupied tile, to indicate a wall
 
 # \x1b[38;2;{r};{g};{b}m
 block_o_color='\x1b[38;2;255;255;0m'  # yellow
@@ -116,27 +117,25 @@ check_bounds() {
         return 1
     fi
     
-    # TODO check bounds based on block ID
-    : '
     case "$1" in
-        1) ;;
-        2) ;;
-        3) ;;
-        4) ;;
-        5) ;;
-        6) ;;
-        7) ;;
+        0)  # Default case, for block = grid cell
+            if (( $1 < 0 || $1 >= GRID_WIDTH || $2 < 0 || $2 >= GRID_HEIGHT )); then
+                echo "Coordinates out of bounds!"
+                return 1
+            fi
+            ;;
+        "1") ;;
+        "2") ;;
+        "3") ;;
+        "4") ;;
+        "5") ;;
+        "6") ;;
+        "7") ;;
         *)
             echo "Invalid block ID!"
             return 1
         ;;
     esac
-    '
-    
-    if (( $1 < 0 || $1 >= GRID_WIDTH || $2 < 0 || $2 >= GRID_HEIGHT )); then
-        echo "Coordinates out of bounds!"
-        return 1
-    fi
     
     return 0
 }
@@ -149,13 +148,13 @@ write_shaped_block() {
     fi
     
     case "$1" in
-        1) ;;
-        2) ;;
-        3) ;;
-        4) ;;
-        5) ;;
-        6) ;;
-        7) ;;
+        "1") ;;
+        "2") ;;
+        "3") ;;
+        "4") ;;
+        "5") ;;
+        "6") ;;
+        "7") ;;
         *)
             echo "Invalid block ID!"
             return 1
@@ -165,8 +164,7 @@ write_shaped_block() {
 
 # Abbandons the block and keeps it in place
 abbandon_current_block() {
-    
-
+    echo ""
 }
 
 # Spawns new shaped block
@@ -174,6 +172,7 @@ spawn_new_block() {
     # TODO
     # 1. Abbandon current block
     # 2. Create new block
+    echo ""
 }
 
 get_random_int_in_range() {
@@ -195,7 +194,7 @@ set_grid_cell() {
     
     local id=$1 x=$2 y=$3
     
-    check_bounds x y
+    check_bounds 0 x y
     
     local coords=$(( y * GRID_WIDTH + x ))
     
@@ -403,7 +402,13 @@ handle_state_1() {
         fall_block_counter=0
         
         # Block touches bottom
-        if (( curr_block_y >= GRID_HEIGHT )); then
+        # work with prev values so we don't mess with updates
+        # current -> future, prev -> current
+        lower_cell_id=${curr_grid[$((curr_block_y * GRID_WIDTH + curr_block_x))]}
+        if (( curr_block_y >= GRID_HEIGHT || lower_cell_id == 8 )); then
+            # Occupy tile
+            set_grid_cell 8 $prev_block_x $prev_block_y
+            
             curr_block_x=$((GRID_WIDTH / 2))
             curr_block_y=0
             prev_block_x=$curr_block_x
