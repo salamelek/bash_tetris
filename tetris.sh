@@ -8,8 +8,11 @@
 GRID_WIDTH=10
 GRID_HEIGHT=20
 GRID_LENGTH=$((GRID_WIDTH * GRID_HEIGHT ))
+# TODO decide grid offset based on terminal size (not just this offset, the whole print offset)
 GRID_OFFSET_X=26
 GRID_OFFSET_Y=9
+HOLD_OFFSET_X=14
+HOLD_OFFSET_Y=15
 
 
 ###########
@@ -59,9 +62,13 @@ fall_block_counter=0
 
 curr_block_id=-1
 next_block_id=-1
+curr_hold_block_id=-1
+prev_hold_block_id=-1
+not_already_switched=0
 curr_block_rotation=0
 curr_block_x=$((GRID_WIDTH / 2))
 curr_block_y=0
+
 
 # id: 0 is empty tile, usually not used because we can just unset the array
 block_o_id=1
@@ -248,6 +255,7 @@ print_color_code() {
 
 # Directly works with the global curr and prev grid
 print_grid_differences() {
+    # Grid
     for i in "${!curr_grid[@]}"; do
         # If element is not the same as in the prev_grid, print it
         if [ "${curr_grid[$i]}" != "${prev_grid[$i]}" ]; then
@@ -265,6 +273,14 @@ print_grid_differences() {
     
     # Update prev arr
     prev_grid=("${curr_grid[@]}")
+    
+    # Hold block
+    if [[ curr_hold_block_id -ne prev_hold_block_id ]]; then
+        tput cup "$HOLD_OFFSET_Y" "$HOLD_OFFSET_X"
+        print_color_code "$curr_hold_block_id"
+        echo -en "██"
+        echo -en "$ANSI_RESET"
+    fi
 }
 
 print_initial_game_screen() {
@@ -384,7 +400,24 @@ handle_state_1() {
             
             (( curr_block_y++ ))
             ;;
-        $'\x1b[A') ;;  # Hold block (Up arrow)
+        $'\x1b[A')    # Hold block (Up arrow)
+            tmp_hold_block_id=$curr_hold_block_id
+            curr_hold_block_id=$curr_block_id
+            
+            if (( tmp_hold_block_id > 0 )); then
+                if (( not_already_switched == 0  )); then
+                    curr_block_id="$tmp_hold_block_id"
+                    not_already_switched=1
+                    echo "imposter!"
+                fi
+            else    # FIXME not working
+                # Hold for the first time                
+                curr_block_id=$next_block_id
+                next_block_id=$(get_random_int_in_range)
+                echo "amongus"
+            fi
+            
+            ;;
         "x") ;;         # Rotate block left
         "c") ;;         # Rotate block right
         *) ;;
@@ -420,6 +453,8 @@ handle_state_1() {
             # new block
             curr_block_id=$next_block_id
             next_block_id=$(get_random_int_in_range)
+            
+            not_already_switched=0
         fi
     fi
     
