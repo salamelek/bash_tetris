@@ -20,11 +20,24 @@ HOLD_OFFSET_Y=15
 ###########
 
 # ===== Block hitboxes =====
+: 'General structure
+xxxx
+xxxx
+xxxx
+xxox
+'
 
 : 'Block O
 xx
 xo
 '
+# TODO how ;-; – rotation
+hitbox_o=(
+    "0" "0" "0" "0"
+    "0" "0" "0" "0"
+    "0" "1" "1" "0"
+    "0" "1" "1" "0"
+)
 : 'Block I
 x
 x
@@ -407,7 +420,7 @@ handle_state_1() {
                 if (( tmp_hold_block_id > 0 )); then
                     curr_hold_block_id=$curr_block_id
                     curr_block_id="$tmp_hold_block_id"
-                else    # FIXME not working
+                else
                     # Hold for the first time     
                     curr_hold_block_id=$curr_block_id           
                     curr_block_id=$next_block_id
