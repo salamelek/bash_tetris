@@ -402,19 +402,19 @@ handle_state_1() {
             ;;
         $'\x1b[A')    # Hold block (Up arrow)
             tmp_hold_block_id=$curr_hold_block_id
-            curr_hold_block_id=$curr_block_id
             
-            if (( tmp_hold_block_id > 0 )); then
-                if (( not_already_switched == 0  )); then
+            if (( not_already_switched == 0  )); then
+                if (( tmp_hold_block_id > 0 )); then
+                    curr_hold_block_id=$curr_block_id
                     curr_block_id="$tmp_hold_block_id"
-                    not_already_switched=1
-                    echo "imposter!"
+                else    # FIXME not working
+                    # Hold for the first time     
+                    curr_hold_block_id=$curr_block_id           
+                    curr_block_id=$next_block_id
+                    next_block_id=$(get_random_int_in_range)
                 fi
-            else    # FIXME not working
-                # Hold for the first time                
-                curr_block_id=$next_block_id
-                next_block_id=$(get_random_int_in_range)
-                echo "amongus"
+                
+                not_already_switched=1
             fi
             
             ;;
