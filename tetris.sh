@@ -243,12 +243,27 @@ draw_block() {
         return 1
     fi
     
-    # move cursor: tput cup expects row (y), col (x)
-    tput cup "$y" "$x"
+    local x="$1" y="$2" id="$3" rotation="$4"
+    
+    start_idx=$((curr_block_rotation*16))
+    
+    # TODO somehow know which block ID is which hitbox
+    for (( i=start_idx; i<((start_idx + 16)); i++ )); do
+        if [[ "${hitbox_l[$i]}" -eq 0 ]]; then
+            continue
+        fi
+        
+        pos=$(( i % 16 ))
+        x_offset=$(( (pos % 4) - 2 ))
+        y_offset=$(( (pos / 4)))
 
-    print_color_code "${curr_grid[$i]}"
-    echo -en "██"
-    echo -en "$ANSI_RESET"
+        # move cursor: tput cup expects row (y), col (x)
+        tput cup $(( y - y_offset + 1 )) $(( x + x_offset * 2 ))
+
+        print_color_code "${curr_grid[$i]}"
+        echo -en "██"
+        echo -en "$ANSI_RESET"
+    done
 }
 
 # Directly works with the global curr and prev grid
@@ -412,17 +427,17 @@ handle_state_1() {
             
             ;;
         "x")        # Rotate block left
-            (( curr_block_rotation-- ))
+            (( curr_block_rotation++ ))
             
-            if (( curr_block_rotation < 1 )); then
-                curr_block_rotation=4
+            if (( curr_block_rotation > 3 )); then
+                curr_block_rotation=0
             fi
             ;;         
         "c")        # Rotate block right
-            (( curr_block_rotation++ ))
+            (( curr_block_rotation-- ))
             
-            if (( curr_block_rotation > 4 )); then
-                curr_block_rotation=0
+            if (( curr_block_rotation < 0 )); then
+                curr_block_rotation=3
             fi
             ;;
         *) ;;
